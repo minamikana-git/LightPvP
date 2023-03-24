@@ -1,0 +1,4 @@
+name: LightPvP
+version: '${project.version}'
+main: org.hotal.lightpvp.LightPvP
+api-version: 1.19
