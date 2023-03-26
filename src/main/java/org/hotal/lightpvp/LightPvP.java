@@ -73,6 +73,7 @@ public final class LightPvP extends JavaPlugin implements Listener {
                         new ItemStack(Material.BOW),
                         new ItemStack(Material.ARROW, 64),
                         new ItemStack(Material.COOKED_BEEF, 64));
+                        new ItemStack(Material.SHIELD,1);
                 player.getInventory().setArmorContents(
                         new ItemStack[]{
                                 new ItemStack(Material.IRON_BOOTS),
