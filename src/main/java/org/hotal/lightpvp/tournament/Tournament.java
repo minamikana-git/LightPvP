@@ -4,11 +4,10 @@ import lombok.Getter;
 
 import java.util.List;
 import java.util.Stack;
-import java.util.UUID;
 
 public class Tournament {
 
-    public static Tournament create(List<UUID> players) throws IllegalArgumentException {
+    public static Tournament create(List<TournamentEntry> players) throws IllegalArgumentException {
         if (players.size() < 2) {
             throw new IllegalArgumentException("人数が少なすぎます");
         }
@@ -18,12 +17,18 @@ public class Tournament {
     @Getter
     private final TournamentNode root;
     private final Stack<TournamentNode> matchStack;
+    @Getter
+    private int depth;
+    @Getter
+    private final int numOfPlayers;
 
-    private Tournament(List<UUID> players) {
-        root = new TournamentNode(players.get(0));
-        matchStack = new Stack<>();
-        root.toMatch(players.get(1));
-        matchStack.add(root);
+    private Tournament(List<TournamentEntry> players) {
+        this.numOfPlayers = players.size();
+        this.root = new TournamentNode(null, players.get(0), 0, 1, players.size());
+        this.matchStack = new Stack<>();
+        this.root.toMatch(players.get(1));
+        this.matchStack.add(root);
+        this.depth = 1;
 
         int nav = 0;
         int navMax = 1;
@@ -40,6 +45,9 @@ public class Tournament {
             }
             currentNode.toMatch(players.get(i));
             matchStack.add(currentNode);
+            if (nav == 0) {
+                this.depth++;
+            }
             if (nav == navMax) {
                 depth++;
                 navMax = (1 << depth) - 1;
