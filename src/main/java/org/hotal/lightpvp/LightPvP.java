@@ -129,25 +129,26 @@ public class LightPvP extends JavaPlugin implements Listener {
         giveItems(player);
     }
 
-    private void giveItems(Player player) {
-        if (player.getGameMode() == GameMode.CREATIVE) {
-            player.getInventory().clear();
-            player.getInventory().addItem(
-                    new ItemStack(Material.IRON_SWORD),
-                    new ItemStack(Material.IRON_AXE),
-                    new ItemStack(Material.BOW),
-                    new ItemStack(Material.ARROW, 64),
-                    new ItemStack(Material.COOKED_BEEF, 64));
-            player.getInventory().setArmorContents(
-                    new ItemStack[]{
-                            new ItemStack(Material.IRON_BOOTS),
-                            new ItemStack(Material.IRON_LEGGINGS),
-                            new ItemStack(Material.IRON_CHESTPLATE),
-                            new ItemStack(Material.IRON_HELMET)});
-        } else {
-            player.getInventory().clear();
+        private void giveItems(Player player) {
+            if (player.getGameMode() == GameMode.CREATIVE) {
+                player.getInventory().clear();
+                player.getInventory().addItem(
+                        new ItemStack(Material.IRON_SWORD),
+                        new ItemStack(Material.IRON_AXE),
+                        new ItemStack(Material.BOW),
+                        new ItemStack(Material.ARROW, 64),
+                        new ItemStack(Material.COOKED_BEEF, 64));
+                        new ItemStack(Material.SHIELD,1);
+                player.getInventory().setArmorContents(
+                        new ItemStack[]{
+                                new ItemStack(Material.IRON_BOOTS),
+                                new ItemStack(Material.IRON_LEGGINGS),
+                                new ItemStack(Material.IRON_CHESTPLATE),
+                                new ItemStack(Material.IRON_HELMET)});
+            } else {
+                player.getInventory().clear();
+            }
         }
-    }
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
