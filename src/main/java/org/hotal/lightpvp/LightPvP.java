@@ -23,10 +23,11 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.hotal.lightpvp.map.LeaderBoard;
+import org.hotal.lightpvp.tournament.INode;
 import org.hotal.lightpvp.tournament.Tournament;
 import org.hotal.lightpvp.tournament.TournamentEntry;
-import org.hotal.lightpvp.tournament.TournamentNode;
 import org.hotal.lightpvp.tournament.WinnerType;
+import org.hotal.lightpvp.tournament.impl.MatchNode;
 
 import java.util.*;
 
@@ -54,17 +55,17 @@ public class LightPvP extends JavaPlugin implements Listener {
                     }
                     Tournament tournament = Tournament.create(uuidList);
                     tournament.getRoot().setWinnerType(WinnerType.values()[new Random().nextInt(2)]);
-                    Queue<Map.Entry<TournamentNode, String>> visitQueue = new ArrayDeque<>();
+                    Queue<Map.Entry<INode, String>> visitQueue = new ArrayDeque<>();
                     visitQueue.add(new AbstractMap.SimpleEntry<>(tournament.getRoot().getLeft(), "L"));
                     visitQueue.add(new AbstractMap.SimpleEntry<>(tournament.getRoot().getRight(), "R"));
                     while (!visitQueue.isEmpty()) {
-                        Map.Entry<TournamentNode, String> entry = visitQueue.poll();
-                        TournamentNode node = entry.getKey();
+                        Map.Entry<INode, String> entry = visitQueue.poll();
+                        INode node = entry.getKey();
                         String nav = entry.getValue();
-                        if (node.isMatch()) {
-                            visitQueue.add(new AbstractMap.SimpleEntry<>(node.getLeft(), nav + "L"));
-                            visitQueue.add(new AbstractMap.SimpleEntry<>(node.getRight(), nav + "R"));
-                            node.setWinnerType(WinnerType.values()[new Random().nextInt(2)]);
+                        if (node instanceof MatchNode matchNode) {
+                            visitQueue.add(new AbstractMap.SimpleEntry<>(matchNode.getLeft(), nav + "L"));
+                            visitQueue.add(new AbstractMap.SimpleEntry<>(matchNode.getRight(), nav + "R"));
+                            matchNode.setWinnerType(WinnerType.values()[new Random().nextInt(2)]);
                         }
                     }
 

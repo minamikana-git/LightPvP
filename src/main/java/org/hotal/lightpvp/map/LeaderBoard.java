@@ -5,16 +5,17 @@ import org.bukkit.map.MapCanvas;
 import org.bukkit.map.MapRenderer;
 import org.bukkit.map.MapView;
 import org.hotal.lightpvp.LightPvP;
+import org.hotal.lightpvp.tournament.INode;
 import org.hotal.lightpvp.tournament.Tournament;
-import org.hotal.lightpvp.tournament.TournamentNode;
 import org.hotal.lightpvp.tournament.WinnerType;
+import org.hotal.lightpvp.tournament.impl.MatchNode;
+import org.hotal.lightpvp.tournament.impl.PlayerNode;
 import org.jetbrains.annotations.NotNull;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,9 +32,12 @@ public class LeaderBoard {
         Font font;
         try {
             image = ImageIO.read(new File(LightPvP.getPlugin().getDataFolder(), "leaderboard.png"));
-        } catch (IOException e) {
-            e.printStackTrace();
-            return List.of();
+        } catch (Exception e) {
+            image = new BufferedImage(128 * COLUMNS, 128 * ROWS, BufferedImage.TYPE_3BYTE_BGR);
+            Graphics2D graphics2D = image.createGraphics();
+            graphics2D.setBackground(Color.WHITE);
+            graphics2D.fillRect(0, 0, 128 * COLUMNS, 128 * ROWS);
+            graphics2D.dispose();
         }
         try {
             font = Font.createFont(Font.TRUETYPE_FONT, new File(LightPvP.getPlugin().getDataFolder(), "leaderboard.ttf"));
@@ -42,11 +46,10 @@ public class LeaderBoard {
             ge.registerFont(font);
 
             font = new Font(font.getName(), Font.PLAIN, 20);
-        } catch (IOException | FontFormatException e) {
+        } catch (Exception e) {
             font = new Font("Arial", Font.BOLD, 12);
         }
         Dimension imageDimension = new Dimension(128 * COLUMNS, 128 * ROWS);
-        final int perPos = (int) (imageDimension.height / (double) (tournament.getNumOfPlayers() + 1));
         final int l = (int) (0.55 * imageDimension.width / tournament.getDepth());
         final int b = (int) (0.28 * imageDimension.width);
         final int tx = (int) (0.05 * imageDimension.width);
@@ -55,27 +58,18 @@ public class LeaderBoard {
         Graphics2D graphics2D = image.createGraphics();
         graphics2D.setFont(font);
 
-        if (tournament.getRoot().getWinnerType() != WinnerType.NONE) {
-            graphics2D.setColor(Color.RED);
-            graphics2D.setStroke(new BasicStroke(5));
-        } else {
-            graphics2D.setColor(Color.BLACK);
-            graphics2D.setStroke(new BasicStroke(2));
-        }
-        graphics2D.drawLine((int) (0.83 * imageDimension.width), (int) (perPos * tournament.getRoot().getPos()), (int) (0.93 * imageDimension.getWidth()), (int) (perPos * tournament.getRoot().getPos()));
-
-        Queue<TournamentNode> queue = new ArrayDeque<>();
+        Queue<INode> queue = new ArrayDeque<>();
         queue.add(tournament.getRoot());
         while (!queue.isEmpty()) {
-            TournamentNode node = queue.poll();
+            INode node = queue.poll();
             final int x = (int) (0.83 * imageDimension.width - (l * node.getDepth()));
 
-            if (node.isMatch()) {
-                final TournamentNode left = node.getLeft();
-                final TournamentNode right = node.getRight();
+            if (node instanceof MatchNode matchNode) {
+                final INode left = matchNode.getLeft();
+                final INode right = matchNode.getRight();
                 queue.add(left);
                 queue.add(right);
-                switch (node.getWinnerType()) {
+                switch (matchNode.getWinnerType()) {
                     case LEFT -> {
                         graphics2D.setColor(Color.RED);
                         graphics2D.setStroke(new BasicStroke(5));
@@ -85,24 +79,8 @@ public class LeaderBoard {
                         graphics2D.setStroke(new BasicStroke(2));
                     }
                 }
-                graphics2D.drawLine(x, (int) (node.getPos() * perPos), x, (int) (left.getPos() * perPos));
-                switch (left.getWinnerType()) {
-                    case NONE -> {
-                        if (node.getWinnerType() == WinnerType.LEFT && !left.isMatch()) {
-                            graphics2D.setColor(Color.RED);
-                            graphics2D.setStroke(new BasicStroke(5));
-                        } else {
-                            graphics2D.setColor(Color.BLACK);
-                            graphics2D.setStroke(new BasicStroke(2));
-                        }
-                    }
-                    case LEFT, RIGHT -> {
-                        graphics2D.setColor(Color.RED);
-                        graphics2D.setStroke(new BasicStroke(5));
-                    }
-                }
-                graphics2D.drawLine(x, (int) (left.getPos() * perPos), left.isMatch() ? (x - l) : b, (int) (left.getPos() * perPos));
-                switch (node.getWinnerType()) {
+                graphics2D.drawLine(x, (int) (node.getPos() * imageDimension.height), x, (int) (left.getPos() * imageDimension.height));
+                switch (matchNode.getWinnerType()) {
                     case RIGHT -> {
                         graphics2D.setColor(Color.RED);
                         graphics2D.setStroke(new BasicStroke(5));
@@ -112,23 +90,39 @@ public class LeaderBoard {
                         graphics2D.setStroke(new BasicStroke(2));
                     }
                 }
-                graphics2D.drawLine(x, (int) (node.getPos() * perPos), x, (int) (right.getPos() * perPos));
-                switch (right.getWinnerType()) {
-                    case NONE -> {
-                        if (node.getWinnerType() == WinnerType.RIGHT && !right.isMatch()) {
-                            graphics2D.setColor(Color.RED);
-                            graphics2D.setStroke(new BasicStroke(5));
-                        } else {
-                            graphics2D.setColor(Color.BLACK);
-                            graphics2D.setStroke(new BasicStroke(2));
-                        }
-                    }
+                graphics2D.drawLine(x, (int) (node.getPos() * imageDimension.height), x, (int) (right.getPos() * imageDimension.height));
+                switch (matchNode.getWinnerType()) {
                     case LEFT, RIGHT -> {
                         graphics2D.setColor(Color.RED);
                         graphics2D.setStroke(new BasicStroke(5));
                     }
+                    case NONE -> {
+                        graphics2D.setColor(Color.BLACK);
+                        graphics2D.setStroke(new BasicStroke(2));
+                    }
                 }
-                graphics2D.drawLine(x, (int) (right.getPos() * perPos), right.isMatch() ? (x - l) : b, (int) (right.getPos() * perPos));
+                graphics2D.drawLine(x, (int) (node.getPos() * imageDimension.height), x + l, (int) (node.getPos() * imageDimension.height));
+
+                if (left instanceof PlayerNode) {
+                    if (matchNode.getWinnerType() == WinnerType.LEFT) {
+                        graphics2D.setColor(Color.RED);
+                        graphics2D.setStroke(new BasicStroke(5));
+                    } else {
+                        graphics2D.setColor(Color.BLACK);
+                        graphics2D.setStroke(new BasicStroke(2));
+                    }
+                    graphics2D.drawLine(x, (int) (left.getPos() * imageDimension.height), b, (int) (left.getPos() * imageDimension.height));
+                }
+                if (right instanceof PlayerNode) {
+                    if (matchNode.getWinnerType() == WinnerType.RIGHT) {
+                        graphics2D.setColor(Color.RED);
+                        graphics2D.setStroke(new BasicStroke(5));
+                    } else {
+                        graphics2D.setColor(Color.BLACK);
+                        graphics2D.setStroke(new BasicStroke(2));
+                    }
+                    graphics2D.drawLine(x, (int) (right.getPos() * imageDimension.height), b, (int) (right.getPos() * imageDimension.height));
+                }
             } else {
                 graphics2D.setColor(Color.BLACK);
                 FontMetrics fontMetrics = graphics2D.getFontMetrics(graphics2D.getFont());
@@ -136,7 +130,7 @@ public class LeaderBoard {
                 final int offsetX = tw - fontMetrics.stringWidth(text);
                 final int offsetY = fontMetrics.getAscent() / 2;
                 final int textX = tx + offsetX;
-                final int textY = (int) (perPos * node.getPos() + offsetY);
+                final int textY = (int) (node.getPos() * imageDimension.height + offsetY);
                 graphics2D.drawString(text, textX, textY);
             }
         }
