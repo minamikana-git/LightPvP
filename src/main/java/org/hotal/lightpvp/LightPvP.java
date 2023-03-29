@@ -2,8 +2,10 @@ package org.hotal.lightpvp;
 
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
+import dev.jorel.commandapi.arguments.ArgumentSuggestions;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import dev.jorel.commandapi.arguments.PlayerArgument;
+import dev.jorel.commandapi.arguments.StringArgument;
 import lombok.Getter;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
@@ -11,6 +13,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.hotal.lightpvp.battle.BattleListener;
 import org.hotal.lightpvp.game.GameManager;
 import org.hotal.lightpvp.map.LeaderBoardHandler;
+import org.hotal.lightpvp.tournament.TournamentEntry;
 import org.hotal.lightpvp.tournament.impl.MatchNode;
 import org.hotal.lightpvp.util.Config;
 
@@ -79,10 +82,11 @@ public class LightPvP extends JavaPlugin implements Listener {
                                 }))
                 .withSubcommand(
                         new CommandAPICommand("unregister")
-                                .withArguments(new PlayerArgument("対象"))
+                                .withArguments(new StringArgument("対象")
+                                        .replaceSuggestions(ArgumentSuggestions.stringCollection(suggestionInfo -> GameManager.getEntries().stream().map(TournamentEntry::getName).toList())))
                                 .executes((sender, args) -> {
-                                    GameManager.unregister((Player) args[0]);
-                                    sender.sendMessage("§a" + ((Player) args[0]).getName() + "の登録を解除しました");
+                                    GameManager.unregister((String) args[0]);
+                                    sender.sendMessage("§a" + args[0] + "の登録を解除しました");
                                 }))
                 .withSubcommand(
                         new CommandAPICommand("next")

@@ -49,8 +49,8 @@ public class GameManager {
         }
     }
 
-    public static void unregister(Player player) {
-        entries.removeIf(entry -> entry.getUuid().equals(player.getUniqueId()));
+    public static void unregister(String name) {
+        entries.removeIf(entry -> entry.getName().equals(name));
     }
 
     public static boolean create() {
