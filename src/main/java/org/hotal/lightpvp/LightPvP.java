@@ -2,6 +2,7 @@ package org.hotal.lightpvp;
 
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
+import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import dev.jorel.commandapi.arguments.PlayerArgument;
 import lombok.Getter;
 import org.bukkit.entity.Player;
@@ -11,6 +12,10 @@ import org.hotal.lightpvp.battle.BattleListener;
 import org.hotal.lightpvp.game.GameManager;
 import org.hotal.lightpvp.map.LeaderBoardHandler;
 import org.hotal.lightpvp.tournament.impl.MatchNode;
+import org.hotal.lightpvp.util.Config;
+
+import java.io.File;
+import java.io.IOException;
 
 
 public class LightPvP extends JavaPlugin implements Listener {
@@ -23,6 +28,8 @@ public class LightPvP extends JavaPlugin implements Listener {
         plugin = this;
 
         saveDefaultConfig();
+        reloadConfig();
+
         saveResource("leaderboard.png", false);
 
         registerListeners();
@@ -32,7 +39,11 @@ public class LightPvP extends JavaPlugin implements Listener {
 
     @Override
     public void onDisable() {
-
+        try {
+            getConfig().save(new File(getDataFolder(), "config.yml"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void registerListeners() {
@@ -94,6 +105,25 @@ public class LightPvP extends JavaPlugin implements Listener {
                                         return;
                                     }
                                     sender.sendMessage(String.format("次の試合: %s vs %s", matchNode.getLeft().getPlayerEntry().getName(), matchNode.getRight().getPlayerEntry().getName()));
+                                }))
+                .withSubcommand(
+                        new CommandAPICommand("clear-frames")
+                                .executes((sender, args) -> {
+                                    Config.clearItemFrame();
+                                }))
+                .withSubcommand(
+                        new CommandAPICommand("set")
+                                .withArguments(new MultiLiteralArgument(
+                                        "lobby",
+                                        "left",
+                                        "right"
+                                ))
+                                .executesPlayer((sender, args) -> {
+                                    switch ((String) args[0]) {
+                                        case "lobby" -> Config.setLobbyLocation(sender.getLocation());
+                                        case "left" -> Config.setLeftSpawnLocation(sender.getLocation());
+                                        case "right" -> Config.setRightSpawnLocation(sender.getLocation());
+                                    }
                                 }))
                 .register();
     }

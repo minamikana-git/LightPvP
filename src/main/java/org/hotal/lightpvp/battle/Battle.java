@@ -34,11 +34,40 @@ public class Battle {
     }
 
     public void start() {
+
+        playerEntryMap.put(WinnerType.LEFT, node.getLeft().getPlayerEntry());
+        playerEntryMap.put(WinnerType.RIGHT, node.getRight().getPlayerEntry());
+
+        if (node.getLeft() == null || node.getRight() == null) {
+            return;
+        }
+
+        leftPlayer = Bukkit.getPlayer(node.getLeft().getPlayerEntry().getUuid());
+        rightPlayer = Bukkit.getPlayer(node.getRight().getPlayerEntry().getUuid());
+
+        if (leftPlayer == null && rightPlayer == null) {
+            return;
+        }
+        if (leftPlayer == null) {
+            win(WinnerType.RIGHT);
+            return;
+        }
+        if (rightPlayer == null) {
+            win(WinnerType.LEFT);
+            return;
+        }
+
+        resetPlayer(leftPlayer);
+        resetPlayer(rightPlayer);
+
+        leftPlayer.teleport(GameManager.getLeftSpawnLocation());
+        rightPlayer.teleport(GameManager.getRightSpawnLocation());
+
         Bukkit.broadcast(Component.text("次の試合は..."));
         Bukkit.broadcast(Component.text(String.format("§c§l%s §rvs §9§l%s", node.getLeft().getPlayerEntry().getName(), node.getRight().getPlayerEntry().getName())));
+
         new BukkitRunnable() {
             int count = 5;
-
             @Override
             public void run() {
                 if (count == 0) {
@@ -54,27 +83,6 @@ public class Battle {
     }
 
     private void onStart() {
-        playerEntryMap.put(WinnerType.LEFT, node.getLeft().getPlayerEntry());
-        playerEntryMap.put(WinnerType.RIGHT, node.getRight().getPlayerEntry());
-
-        if (node.getLeft() == null || node.getRight() == null) {
-            return;
-        }
-
-        this.leftPlayer = Bukkit.getPlayer(node.getLeft().getPlayerEntry().getUuid());
-        this.rightPlayer = Bukkit.getPlayer(node.getRight().getPlayerEntry().getUuid());
-
-        if (leftPlayer == null && rightPlayer == null) {
-            return;
-        }
-        if (leftPlayer == null) {
-            win(WinnerType.RIGHT);
-            return;
-        }
-        if (rightPlayer == null) {
-            win(WinnerType.LEFT);
-            return;
-        }
 
         initPlayer(leftPlayer);
         initPlayer(rightPlayer);
@@ -107,17 +115,18 @@ public class Battle {
     }
 
     public void win(WinnerType type) {
-        Bukkit.getOnlinePlayers().forEach(player -> player.playSound(player.getLocation(), Sound.ITEM_TRIDENT_THUNDER, 1, 1));
-        Bukkit.broadcast(Component.text("§a" + playerEntryMap.get(type).getName() + "の勝利！"));
         resetPlayer(leftPlayer);
         resetPlayer(rightPlayer);
+        leftPlayer.teleport(GameManager.getLobbyLocation());
+        rightPlayer.teleport(GameManager.getLobbyLocation());
         node.setWinnerType(type);
         GameManager.updateItemFrame();
+        Bukkit.getOnlinePlayers().forEach(player -> player.playSound(player.getLocation(), Sound.ITEM_TRIDENT_THUNDER, 1, 1));
+        Bukkit.broadcast(Component.text("§a" + playerEntryMap.get(type).getName() + "の勝利！"));
         isStarted = false;
     }
 
     private void initPlayer(Player player) {
-        resetPlayer(player);
         player.getInventory().addItem(
                 new ItemStack(Material.IRON_SWORD),
                 new ItemStack(Material.IRON_AXE),

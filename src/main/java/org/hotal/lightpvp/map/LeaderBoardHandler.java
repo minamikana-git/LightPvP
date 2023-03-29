@@ -8,7 +8,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.hanging.HangingBreakByEntityEvent;
-import org.hotal.lightpvp.game.GameManager;
+import org.hotal.lightpvp.util.Config;
 
 public class LeaderBoardHandler implements Listener {
 
@@ -19,7 +19,7 @@ public class LeaderBoardHandler implements Listener {
                 if (!player.isOp()) {
                     return;
                 }
-                if (GameManager.addItemFrame(itemFrame)) {
+                if (Config.addItemFrame(itemFrame)) {
                     event.setCancelled(true);
                     player.sendMessage(Component.text("マップの場所を登録しました"));
                     player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BELL, 1, 1);
