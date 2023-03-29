@@ -12,6 +12,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.hotal.lightpvp.LightPvP;
+import org.hotal.lightpvp.game.GameManager;
 import org.hotal.lightpvp.tournament.TournamentEntry;
 import org.hotal.lightpvp.tournament.WinnerType;
 import org.hotal.lightpvp.tournament.impl.MatchNode;
@@ -110,6 +111,8 @@ public class Battle {
         Bukkit.broadcast(Component.text("§a" + playerEntryMap.get(type).getName() + "の勝利！"));
         resetPlayer(leftPlayer);
         resetPlayer(rightPlayer);
+        node.setWinnerType(type);
+        GameManager.updateItemFrame();
         isStarted = false;
     }
 

@@ -1,4 +1,4 @@
-package org.hotal.lightpvp.map;
+package org.hotal.lightpvp.util;
 
 import org.bukkit.entity.Player;
 import org.bukkit.map.MapCanvas;
@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.stream.Collectors;
 
-public class LeaderBoard {
+public class LeaderBoardUtils {
 
     public static final int ROWS = 5;
     public static final int COLUMNS = 6;
@@ -157,10 +157,10 @@ public class LeaderBoard {
 
         final List<BufferedImage> response = new ArrayList<>();
 
-        int chunkWidth = image.getWidth() / LeaderBoard.COLUMNS; // determines the chunk width and height
-        int chunkHeight = image.getHeight() / LeaderBoard.ROWS;
-        for (int x = 0; x < LeaderBoard.ROWS; x++) {
-            for (int y = 0; y < LeaderBoard.COLUMNS; y++) {
+        int chunkWidth = image.getWidth() / LeaderBoardUtils.COLUMNS; // determines the chunk width and height
+        int chunkHeight = image.getHeight() / LeaderBoardUtils.ROWS;
+        for (int x = 0; x < LeaderBoardUtils.ROWS; x++) {
+            for (int y = 0; y < LeaderBoardUtils.COLUMNS; y++) {
                 int imageType = image.getType();
                 if (imageType == 0) {
                     imageType = 5;

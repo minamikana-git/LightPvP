@@ -13,13 +13,6 @@ import java.util.Stack;
 
 public class Tournament {
 
-    public static Tournament create(List<TournamentEntry> players) throws IllegalArgumentException {
-        if (players.size() < 2) {
-            throw new IllegalArgumentException("人数が少なすぎます");
-        }
-        return new Tournament(players);
-    }
-
     @Getter
     private final List<TournamentEntry> players;
     @Getter
@@ -28,7 +21,11 @@ public class Tournament {
     private final int depth;
     private final Stack<MatchNode> matchStack;
 
-    private Tournament(List<TournamentEntry> players) {
+    public Tournament(List<TournamentEntry> players) {
+        if (players.size() < 2) {
+            throw new IllegalArgumentException("人数が少なすぎます");
+        }
+
         this.players = players;
         this.root = new MatchNode(0);
         this.matchStack = new Stack<>();

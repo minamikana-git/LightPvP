@@ -1,6 +1,7 @@
 package org.hotal.lightpvp;
 
 import dev.jorel.commandapi.CommandAPICommand;
+import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.arguments.PlayerArgument;
 import lombok.Getter;
 import org.bukkit.entity.Player;
@@ -8,6 +9,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.hotal.lightpvp.battle.BattleListener;
 import org.hotal.lightpvp.game.GameManager;
+import org.hotal.lightpvp.map.LeaderBoardHandler;
 import org.hotal.lightpvp.tournament.impl.MatchNode;
 
 
@@ -35,15 +37,17 @@ public class LightPvP extends JavaPlugin implements Listener {
 
     private void registerListeners() {
         getServer().getPluginManager().registerEvents(new BattleListener(), this);
+        getServer().getPluginManager().registerEvents(new LeaderBoardHandler(), this);
     }
 
     private void createCommands() {
         new CommandAPICommand("tournament")
                 .withAliases("lt")
+                .withPermission(CommandPermission.OP)
                 .withSubcommand(
                         new CommandAPICommand("create")
                                 .executes((sender, args) -> {
-                                    if (!GameManager.start()) {
+                                    if (!GameManager.create()) {
                                         sender.sendMessage("§cトーナメントの構築に失敗しました");
                                     } else {
                                         sender.sendMessage("§aトーナメントを構築しました");
@@ -84,6 +88,9 @@ public class LightPvP extends JavaPlugin implements Listener {
                                 .executes((sender, args) -> {
                                     MatchNode matchNode = GameManager.getNextMatch();
                                     if (matchNode == null) {
+                                        return;
+                                    }
+                                    if (matchNode.getLeft().getPlayerEntry() == null || matchNode.getRight().getPlayerEntry() == null) {
                                         return;
                                     }
                                     sender.sendMessage(String.format("次の試合: %s vs %s", matchNode.getLeft().getPlayerEntry().getName(), matchNode.getRight().getPlayerEntry().getName()));
