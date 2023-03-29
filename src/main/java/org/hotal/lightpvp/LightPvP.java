@@ -1,35 +1,14 @@
 package org.hotal.lightpvp;
 
 import dev.jorel.commandapi.CommandAPICommand;
-import dev.jorel.commandapi.arguments.IntegerArgument;
+import dev.jorel.commandapi.arguments.PlayerArgument;
 import lombok.Getter;
-import org.bukkit.Bukkit;
-import org.bukkit.GameMode;
-import org.bukkit.Material;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.MapMeta;
-import org.bukkit.map.MapRenderer;
-import org.bukkit.map.MapView;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.hotal.lightpvp.map.LeaderBoard;
-import org.hotal.lightpvp.tournament.INode;
-import org.hotal.lightpvp.tournament.Tournament;
-import org.hotal.lightpvp.tournament.TournamentEntry;
-import org.hotal.lightpvp.tournament.WinnerType;
+import org.hotal.lightpvp.battle.BattleListener;
+import org.hotal.lightpvp.game.GameManager;
 import org.hotal.lightpvp.tournament.impl.MatchNode;
-
-import java.util.*;
 
 
 public class LightPvP extends JavaPlugin implements Listener {
@@ -44,44 +23,9 @@ public class LightPvP extends JavaPlugin implements Listener {
         saveDefaultConfig();
         saveResource("leaderboard.png", false);
 
-        getServer().getPluginManager().registerEvents(this, this);
+        registerListeners();
 
-        new CommandAPICommand("test")
-                .withArguments(new IntegerArgument("num"))
-                .executesPlayer((sender, args) -> {
-                    final List<TournamentEntry> uuidList = new ArrayList<>();
-                    for (int i = 0; i < (int) args[0]; i++) {
-                        uuidList.add(new TournamentEntry(UUID.randomUUID(), "Username" + i));
-                    }
-                    Tournament tournament = Tournament.create(uuidList);
-                    tournament.getRoot().setWinnerType(WinnerType.values()[new Random().nextInt(2)]);
-                    Queue<Map.Entry<INode, String>> visitQueue = new ArrayDeque<>();
-                    visitQueue.add(new AbstractMap.SimpleEntry<>(tournament.getRoot().getLeft(), "L"));
-                    visitQueue.add(new AbstractMap.SimpleEntry<>(tournament.getRoot().getRight(), "R"));
-                    while (!visitQueue.isEmpty()) {
-                        Map.Entry<INode, String> entry = visitQueue.poll();
-                        INode node = entry.getKey();
-                        String nav = entry.getValue();
-                        if (node instanceof MatchNode matchNode) {
-                            visitQueue.add(new AbstractMap.SimpleEntry<>(matchNode.getLeft(), nav + "L"));
-                            visitQueue.add(new AbstractMap.SimpleEntry<>(matchNode.getRight(), nav + "R"));
-                            matchNode.setWinnerType(WinnerType.values()[new Random().nextInt(2)]);
-                        }
-                    }
-
-                    List<MapRenderer> tournamentMap = LeaderBoard.createMap(tournament);
-                    tournamentMap.forEach(mapRenderer -> {
-                        MapView view = Bukkit.createMap(Bukkit.getWorlds().get(0));
-                        view.getRenderers().clear();
-                        view.addRenderer(mapRenderer);
-                        ItemStack map = new ItemStack(Material.FILLED_MAP);
-                        MapMeta mapMeta = (MapMeta) map.getItemMeta();
-                        mapMeta.setMapView(view);
-                        map.setItemMeta(mapMeta);
-                        sender.getInventory().addItem(map);
-                    });
-                })
-                .register();
+        createCommands();
     }
 
     @Override
@@ -89,101 +33,62 @@ public class LightPvP extends JavaPlugin implements Listener {
 
     }
 
-    @Override
-    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-        if (cmd.getName().equalsIgnoreCase("start")) {
-            if (!(sender instanceof Player)) {
-                sender.sendMessage("このコマンドはプレイヤーからのみ実行できます。");
-                return true;
-            }
-            startGame((Player) sender);
-            return true;
-        }
-        return false;
+    private void registerListeners() {
+        getServer().getPluginManager().registerEvents(new BattleListener(), this);
     }
 
-    private void startGame(Player player) {
-        player.sendMessage("§6§l5§e§l秒前");
-        new BukkitRunnable() {
-            int count = 4;
-
-            @Override
-            public void run() {
-                if (count > 0) {
-                    player.sendMessage("§6§l" + count + "§e§l秒前");
-                    count--;
-                } else {
-                    player.sendMessage("§6§lスタート！");
-                    startPvP(player);
-                    cancel();
-                }
-            }
-        }.runTaskTimer(this, 20L, 20L);
+    private void createCommands() {
+        new CommandAPICommand("tournament")
+                .withAliases("lt")
+                .withSubcommand(
+                        new CommandAPICommand("create")
+                                .executes((sender, args) -> {
+                                    if (!GameManager.start()) {
+                                        sender.sendMessage("§cトーナメントの構築に失敗しました");
+                                    } else {
+                                        sender.sendMessage("§aトーナメントを構築しました");
+                                    }
+                                }))
+                .withSubcommand(
+                        new CommandAPICommand("terminate")
+                                .executes((sender, args) -> {
+                                    GameManager.end();
+                                    sender.sendMessage("§aトーナメントを終了しました");
+                                }))
+                .withSubcommand(
+                        new CommandAPICommand("register")
+                                .withArguments(new PlayerArgument("対象"))
+                                .executes((sender, args) -> {
+                                    GameManager.register((Player) args[0]);
+                                    sender.sendMessage("§a" + ((Player) args[0]).getName() + "を登録しました");
+                                }))
+                .withSubcommand(
+                        new CommandAPICommand("unregister")
+                                .withArguments(new PlayerArgument("対象"))
+                                .executes((sender, args) -> {
+                                    GameManager.unregister((Player) args[0]);
+                                    sender.sendMessage("§a" + ((Player) args[0]).getName() + "の登録を解除しました");
+                                }))
+                .withSubcommand(
+                        new CommandAPICommand("next")
+                                .executes((sender, args) -> {
+                                    GameManager.nextMatch();
+                                }))
+                .withSubcommand(
+                        new CommandAPICommand("list")
+                                .executes((sender, args) -> {
+                                    GameManager.getEntries().forEach(entry -> sender.sendMessage(entry.getName()));
+                                }))
+                .withSubcommand(
+                        new CommandAPICommand("info")
+                                .executes((sender, args) -> {
+                                    MatchNode matchNode = GameManager.getNextMatch();
+                                    if (matchNode == null) {
+                                        return;
+                                    }
+                                    sender.sendMessage(String.format("次の試合: %s vs %s", matchNode.getLeft().getPlayerEntry().getName(), matchNode.getRight().getPlayerEntry().getName()));
+                                }))
+                .register();
     }
 
-    private void startPvP(Player player) {
-        if (player.getGameMode() == GameMode.CREATIVE) {
-            player.sendMessage("§cPvPモードをオンにしてください。");
-            return;
-        }
-        player.sendMessage("§aゲームスタート！");
-        giveItems(player);
-    }
-
-        private void giveItems(Player player) {
-            if (player.getGameMode() == GameMode.CREATIVE) {
-                player.getInventory().clear();
-                player.getInventory().addItem(
-                        new ItemStack(Material.IRON_SWORD),
-                        new ItemStack(Material.IRON_AXE),
-                        new ItemStack(Material.BOW),
-                        new ItemStack(Material.ARROW, 64),
-                        new ItemStack(Material.COOKED_BEEF, 64));
-                        new ItemStack(Material.SHIELD,1);
-                player.getInventory().setArmorContents(
-                        new ItemStack[]{
-                                new ItemStack(Material.IRON_BOOTS),
-                                new ItemStack(Material.IRON_LEGGINGS),
-                                new ItemStack(Material.IRON_CHESTPLATE),
-                                new ItemStack(Material.IRON_HELMET)});
-            } else {
-                player.getInventory().clear();
-            }
-        }
-
-    @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
-        Player player = event.getPlayer();
-        player.setGameMode(GameMode.SURVIVAL);
-        player.addPotionEffect(new PotionEffect(PotionEffectType.HEALTH_BOOST, Integer.MAX_VALUE, 4));
-    }
-
-    @EventHandler
-    public void onPlayerQuit(PlayerQuitEvent event) {
-        Player player =
-                event.getPlayer();
-        if (player.getGameMode() == GameMode.CREATIVE) {
-            player.setGameMode(GameMode.SURVIVAL);
-        }
-    }
-
-    @EventHandler
-    public void onPlayerDeath(PlayerDeathEvent event) {
-        Player player = event.getEntity();
-        player.sendMessage("§c負けてしまった...");
-        Player killer = player.getKiller();
-        if (killer != null) {
-            killer.sendMessage("§aあなたの勝利です！");
-        }
-        resetPlayer(player);
-        resetPlayer(killer);
-    }
-
-    private void resetPlayer(Player player) {
-        player.setGameMode(GameMode.SURVIVAL);
-        player.setHealth(20.0);
-        player.setFoodLevel(20);
-        player.getInventory().clear();
-        player.getInventory().setArmorContents(new ItemStack[]{null, null, null, null});
-    }
 }

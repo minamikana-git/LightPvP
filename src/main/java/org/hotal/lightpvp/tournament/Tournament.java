@@ -71,6 +71,10 @@ public class Tournament {
         return matchStack.pop();
     }
 
+    public MatchNode getNextMatch() {
+        return matchStack.peek();
+    }
+
     public boolean isEmpty() {
         return matchStack.isEmpty();
     }
