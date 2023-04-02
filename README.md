@@ -26,18 +26,25 @@
 /lt list: 登録済みプレイヤーを表示する
 /lt info: トーナメントの情報を表示する
 /lt set [lobby/left/right]: トーナメントに使用する座標を設定する
-/lt clear-frames: 設定済みの額縁を削除する
+/lt leaderboard [NORMAL/SMALL]: リーダーボードを登録する
+/lt clear-leaderboards: 設定済みのリーダーボードを削除する
+
 ```
 
 ### 額縁の登録
 
 トーナメント表を表示するために額縁を登録する必要があります
 
-OP権限を持ったプレイヤーがブレイズロッドを持って輝く額縁を左クリックすることで設定可能です
+OP権限を持ったプレイヤーが輝く額縁を左クリックすることで設定可能です
 
-縦5x横6ブロックの額縁を左上から右下にかけて30個クリックしてください
+/lt leaderboard [NORMAL/SMALL]コマンドを実行した後に
+
+NORMALなら縦5x横6ブロックの額縁を
+SMALLなら縦5x横6ブロックの額縁を
+左上から右下にかけてクリックしてください
 
 ```
+例) NORMALの場合
 [1 ][2 ][3 ][4 ][5 ]
 [6 ][7 ][8 ][9 ][10]
 [11][12][13][14][15]
@@ -51,13 +58,15 @@ OP権限を持ったプレイヤーがブレイズロッドを持って輝く額
 
 - 座標の情報と額縁の情報は再起動後も保持されますが参加者の情報は再起動後には保持されません
 
-- プラグインのデータフォルダ内に「leaderboard.png」もしくは「leaderboard.ttf」という名前のファイルを入れることでトーナメント表の背景画像やフォントを差し替えることが出来ます
-画像を差し替える場合は必ず縦640px横768pxとなるように調整してください
+- プラグインのデータフォルダ内に「leaderboard.png」もしくは「leaderboard.ttf」などの名前を持ったファイルを入れることでトーナメント表の背景画像やフォントを差し替えることが出来ます
+画像を差し替える場合は必ずNORMALの場合は縦640px横768px、SMALLの場合は縦640px横640pxとなるように調整してください
 ```
 plugins
   └── LightPvP
-        ├── leaderboard.png ... (*)
-        ├── leaderboard.ttf ... (*)
+        ├── leaderboard.png ... (NORMAL)
+        ├── leaderboard.ttf ... (NORMAL)
+        ├── small_leaderboard.png ... (SMALL)
+        ├── small_leaderboard.ttf ... (SMALL)
         └── config.yml
 ```
 
