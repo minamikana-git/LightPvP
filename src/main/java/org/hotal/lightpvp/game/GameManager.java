@@ -1,25 +1,24 @@
 package org.hotal.lightpvp.game;
 
 import lombok.Getter;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.Material;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.GlowItemFrame;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.MapMeta;
-import org.bukkit.map.MapRenderer;
-import org.bukkit.map.MapView;
 import org.hotal.lightpvp.LightPvP;
 import org.hotal.lightpvp.battle.Battle;
+import org.hotal.lightpvp.map.Leaderboard;
+import org.hotal.lightpvp.map.LeaderboardManager;
+import org.hotal.lightpvp.map.LeaderboardSize;
 import org.hotal.lightpvp.tournament.Tournament;
 import org.hotal.lightpvp.tournament.TournamentEntry;
 import org.hotal.lightpvp.tournament.impl.MatchNode;
 import org.hotal.lightpvp.util.Config;
-import org.hotal.lightpvp.util.LeaderBoardUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +33,7 @@ public class GameManager {
     private static Battle currentBattle;
     @Getter
     private static final List<TournamentEntry> entries = new ArrayList<>();
-    private static final List<GlowItemFrame> itemFrames = new ArrayList<>();
+    private static final List<Leaderboard> leaderboards = new ArrayList<>();
 
     @Getter
     private static Location lobbyLocation;
@@ -66,7 +65,7 @@ public class GameManager {
             return false;
         }
         tournament = new Tournament(entries);
-        updateItemFrame();
+        updateLeaderboards();
         return true;
     }
 
@@ -100,21 +99,9 @@ public class GameManager {
         return tournament != null && !tournament.isEmpty();
     }
 
-    public static void updateItemFrame() {
-        final List<MapRenderer> maps = LeaderBoardUtils.createMap(tournament);
-        if (maps.size() > itemFrames.size()) {
-            return;
-        }
-        for (int i = 0; i < maps.size(); i++) {
-            MapView view = Bukkit.createMap(Bukkit.getWorlds().get(0));
-            view.getRenderers().clear();
-            view.addRenderer(maps.get(i));
-            ItemStack map = new ItemStack(Material.FILLED_MAP);
-            MapMeta mapMeta = (MapMeta) map.getItemMeta();
-            mapMeta.setMapView(view);
-            map.setItemMeta(mapMeta);
-            itemFrames.get(i).setItem(map);
-        }
+    public static void updateLeaderboards() {
+        LeaderboardManager.update();
+        leaderboards.forEach(Leaderboard::update);
     }
 
     private static void loadConfig() {
@@ -122,17 +109,28 @@ public class GameManager {
         lobbyLocation = Objects.requireNonNull(config.getLocation(Config.LOBBY_LOCATION));
         leftSpawnLocation = Objects.requireNonNull(config.getLocation(Config.LEFT_SPAWN_LOCATION));
         rightSpawnLocation = Objects.requireNonNull(config.getLocation(Config.RIGHT_SPAWN_LOCATION));
-        itemFrames.clear();
-        config.getStringList(Config.ITEM_FRAMES).stream().map(UUID::fromString).forEach(uuid -> {
-            for (Entity entity : Bukkit.getWorlds().get(0).getEntities()) {
-                if (entity.getType() != EntityType.GLOW_ITEM_FRAME) {
+        leaderboards.clear();
+        ConfigurationSection section = config.getConfigurationSection(Config.LEADERBOARDS);
+        if (section != null) {
+            for (String key : section.getKeys(false)) {
+                ConfigurationSection s = section.getConfigurationSection(key);
+                if (s == null) {
                     continue;
                 }
-                if (entity.getUniqueId().equals(uuid)) {
-                    itemFrames.add((GlowItemFrame) entity);
-                }
+                List<GlowItemFrame> itemFrames = new ArrayList<>();
+                s.getStringList(Config.ITEM_FRAMES).stream().map(UUID::fromString).forEach(uuid -> {
+                    for (Entity entity : Bukkit.getWorlds().get(0).getEntities()) {
+                        if (entity.getType() != EntityType.GLOW_ITEM_FRAME) {
+                            continue;
+                        }
+                        if (entity.getUniqueId().equals(uuid)) {
+                            itemFrames.add((GlowItemFrame) entity);
+                        }
+                    }
+                });
+                leaderboards.add(new Leaderboard(LeaderboardSize.valueOf(s.getString(Config.LEADERBOARD_SIZE)), itemFrames));
             }
-        });
+        }
     }
 
 }
