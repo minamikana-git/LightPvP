@@ -28,6 +28,7 @@ public class Battle {
     private final Map<WinnerType, TournamentEntry> playerEntryMap = new HashMap<>();
     private Player leftPlayer;
     private Player rightPlayer;
+    @Getter
     private boolean isStarted = false;
 
     public Battle(MatchNode node) {
