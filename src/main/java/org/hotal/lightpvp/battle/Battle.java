@@ -120,7 +120,7 @@ public class Battle {
         leftPlayer.teleport(GameManager.getLobbyLocation());
         rightPlayer.teleport(GameManager.getLobbyLocation());
         node.setWinnerType(type);
-        GameManager.updateItemFrame();
+        GameManager.updateLeaderboards();
         Bukkit.getOnlinePlayers().forEach(player -> player.playSound(player.getLocation(), Sound.ITEM_TRIDENT_THUNDER, 1, 1));
         Bukkit.broadcast(Component.text("§a" + playerEntryMap.get(type).getName() + "の勝利！"));
         isStarted = false;

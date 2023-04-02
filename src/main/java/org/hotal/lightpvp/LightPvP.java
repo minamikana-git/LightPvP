@@ -12,13 +12,17 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.hotal.lightpvp.battle.BattleListener;
 import org.hotal.lightpvp.game.GameManager;
-import org.hotal.lightpvp.map.LeaderBoardHandler;
+import org.hotal.lightpvp.map.LeaderboardManager;
+import org.hotal.lightpvp.map.LeaderboardSize;
+import org.hotal.lightpvp.map.RegistrationHandler;
+import org.hotal.lightpvp.map.RegistrationSession;
 import org.hotal.lightpvp.tournament.TournamentEntry;
 import org.hotal.lightpvp.tournament.impl.MatchNode;
 import org.hotal.lightpvp.util.Config;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 
 
 public class LightPvP extends JavaPlugin implements Listener {
@@ -34,6 +38,9 @@ public class LightPvP extends JavaPlugin implements Listener {
         reloadConfig();
 
         saveResource("leaderboard.png", false);
+        saveResource("small_leaderboard.png", false);
+
+        LeaderboardManager.init();
 
         registerListeners();
 
@@ -51,7 +58,7 @@ public class LightPvP extends JavaPlugin implements Listener {
 
     private void registerListeners() {
         getServer().getPluginManager().registerEvents(new BattleListener(), this);
-        getServer().getPluginManager().registerEvents(new LeaderBoardHandler(), this);
+        getServer().getPluginManager().registerEvents(new RegistrationHandler(), this);
     }
 
     private void createCommands() {
@@ -111,9 +118,15 @@ public class LightPvP extends JavaPlugin implements Listener {
                                     sender.sendMessage(String.format("次の試合: %s vs %s", matchNode.getLeft().getPlayerEntry().getName(), matchNode.getRight().getPlayerEntry().getName()));
                                 }))
                 .withSubcommand(
-                        new CommandAPICommand("clear-frames")
+                        new CommandAPICommand("clear-leaderboards")
                                 .executes((sender, args) -> {
-                                    Config.clearItemFrame();
+                                    Config.clearLeaderboards();
+                                }))
+                .withSubcommand(
+                        new CommandAPICommand("leaderboard")
+                                .withArguments(new MultiLiteralArgument(Arrays.stream(LeaderboardSize.values()).map(LeaderboardSize::toString).toArray(String[]::new)))
+                                .executesPlayer((sender, args) -> {
+                                    RegistrationHandler.register(new RegistrationSession(sender.getUniqueId(), LeaderboardSize.valueOf((String) args[0])));
                                 }))
                 .withSubcommand(
                         new CommandAPICommand("set")

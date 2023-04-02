@@ -1,15 +1,18 @@
-package org.hotal.lightpvp.util;
+package org.hotal.lightpvp.map.impl;
 
 import org.bukkit.entity.Player;
 import org.bukkit.map.MapCanvas;
 import org.bukkit.map.MapRenderer;
 import org.bukkit.map.MapView;
 import org.hotal.lightpvp.LightPvP;
+import org.hotal.lightpvp.map.IMapProvider;
+import org.hotal.lightpvp.map.LeaderboardSize;
 import org.hotal.lightpvp.tournament.INode;
 import org.hotal.lightpvp.tournament.Tournament;
 import org.hotal.lightpvp.tournament.WinnerType;
 import org.hotal.lightpvp.tournament.impl.MatchNode;
 import org.hotal.lightpvp.tournament.impl.PlayerNode;
+import org.hotal.lightpvp.util.ImageUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.imageio.ImageIO;
@@ -17,39 +20,41 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 import java.util.stream.Collectors;
 
-public class LeaderBoardUtils {
+public class SmallMapProvider implements IMapProvider {
 
-    public static final int ROWS = 5;
-    public static final int COLUMNS = 6;
+    @Override
+    public LeaderboardSize getTargetSize() {
+        return LeaderboardSize.SMALL;
+    }
 
-    public static List<MapRenderer> createMap(Tournament tournament) {
+    @Override
+    public List<MapRenderer> provide(Tournament tournament) {
         BufferedImage image;
         Font font;
         try {
-            image = ImageIO.read(new File(LightPvP.getPlugin().getDataFolder(), "leaderboard.png"));
+            image = ImageIO.read(new File(LightPvP.getPlugin().getDataFolder(), "small_leaderboard.png"));
         } catch (Exception e) {
-            image = new BufferedImage(128 * COLUMNS, 128 * ROWS, BufferedImage.TYPE_3BYTE_BGR);
+            image = new BufferedImage(128 * getTargetSize().getColumns(), 128 * getTargetSize().getRows(), BufferedImage.TYPE_3BYTE_BGR);
             Graphics2D graphics2D = image.createGraphics();
             graphics2D.setBackground(Color.WHITE);
-            graphics2D.fillRect(0, 0, 128 * COLUMNS, 128 * ROWS);
+            graphics2D.fillRect(0, 0, 128 * getTargetSize().getColumns(), 128 * getTargetSize().getRows());
             graphics2D.dispose();
         }
         try {
-            font = Font.createFont(Font.TRUETYPE_FONT, new File(LightPvP.getPlugin().getDataFolder(), "leaderboard.ttf"));
+            font = Font.createFont(Font.TRUETYPE_FONT, new File(LightPvP.getPlugin().getDataFolder(), "small_leaderboard.ttf"));
 
             GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
             ge.registerFont(font);
 
-            font = new Font(font.getName(), Font.PLAIN, 20);
+            font = new Font(font.getName(), Font.PLAIN, 16);
         } catch (Exception e) {
-            font = new Font("Arial", Font.BOLD, 12);
+            font = new Font("Arial", Font.BOLD, 16);
         }
-        Dimension imageDimension = new Dimension(128 * COLUMNS, 128 * ROWS);
+        Dimension imageDimension = new Dimension(128 * getTargetSize().getColumns(), 128 * getTargetSize().getRows());
         final int l = (int) (0.55 * imageDimension.width / tournament.getDepth());
         final int b = (int) (0.28 * imageDimension.width);
         final int tx = (int) (0.05 * imageDimension.width);
@@ -142,7 +147,7 @@ public class LeaderBoardUtils {
         } catch (Exception ignored) {
         }
 
-        return splitImage(image).stream()
+        return ImageUtils.splitImage(image, getTargetSize().getRows(), getTargetSize().getColumns()).stream()
                 .map(bi -> new MapRenderer() {
                     @Override
                     public void render(@NotNull MapView map, @NotNull MapCanvas canvas, @NotNull Player player) {
@@ -151,34 +156,6 @@ public class LeaderBoardUtils {
                     }
                 })
                 .collect(Collectors.toList());
-    }
-
-    private static List<BufferedImage> splitImage(BufferedImage image) {
-
-        final List<BufferedImage> response = new ArrayList<>();
-
-        int chunkWidth = image.getWidth() / LeaderBoardUtils.COLUMNS; // determines the chunk width and height
-        int chunkHeight = image.getHeight() / LeaderBoardUtils.ROWS;
-        for (int x = 0; x < LeaderBoardUtils.ROWS; x++) {
-            for (int y = 0; y < LeaderBoardUtils.COLUMNS; y++) {
-                int imageType = image.getType();
-                if (imageType == 0) {
-                    imageType = 5;
-                }
-
-                BufferedImage splitImage = new BufferedImage(chunkWidth, chunkHeight, imageType);
-
-                Graphics2D gr = splitImage.createGraphics();
-                gr.drawImage(image, 0, 0, chunkWidth, chunkHeight, chunkWidth * y, chunkHeight * x,
-                        chunkWidth * y + chunkWidth, chunkHeight * x + chunkHeight, null);
-                gr.dispose();
-
-                response.add(splitImage);
-            }
-        }
-
-        return response;
-
     }
 
 }
