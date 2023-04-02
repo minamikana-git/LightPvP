@@ -17,6 +17,7 @@ import org.hotal.lightpvp.tournament.TournamentEntry;
 import org.hotal.lightpvp.tournament.WinnerType;
 import org.hotal.lightpvp.tournament.impl.MatchNode;
 
+import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -35,17 +36,18 @@ public class Battle {
 
     public void start() {
 
-        playerEntryMap.put(WinnerType.LEFT, node.getLeft().getPlayerEntry());
-        playerEntryMap.put(WinnerType.RIGHT, node.getRight().getPlayerEntry());
-
         if (node.getLeft() == null || node.getRight() == null) {
             return;
         }
 
-        leftPlayer = Bukkit.getPlayer(node.getLeft().getPlayerEntry().getUuid());
-        rightPlayer = Bukkit.getPlayer(node.getRight().getPlayerEntry().getUuid());
+        playerEntryMap.put(WinnerType.LEFT, node.getLeft().getPlayerEntry());
+        playerEntryMap.put(WinnerType.RIGHT, node.getRight().getPlayerEntry());
+
+        leftPlayer = getPlayer(node.getLeft().getPlayerEntry());
+        rightPlayer = getPlayer(node.getRight().getPlayerEntry());
 
         if (leftPlayer == null && rightPlayer == null) {
+            skip();
             return;
         }
         if (leftPlayer == null) {
@@ -68,6 +70,7 @@ public class Battle {
 
         new BukkitRunnable() {
             int count = 5;
+
             @Override
             public void run() {
                 if (count == 0) {
@@ -117,13 +120,17 @@ public class Battle {
     public void win(WinnerType type) {
         resetPlayer(leftPlayer);
         resetPlayer(rightPlayer);
-        leftPlayer.teleport(GameManager.getLobbyLocation());
-        rightPlayer.teleport(GameManager.getLobbyLocation());
+        if (leftPlayer != null) leftPlayer.teleport(GameManager.getLobbyLocation());
+        if (rightPlayer != null) rightPlayer.teleport(GameManager.getLobbyLocation());
         node.setWinnerType(type);
         GameManager.updateLeaderboards();
         Bukkit.getOnlinePlayers().forEach(player -> player.playSound(player.getLocation(), Sound.ITEM_TRIDENT_THUNDER, 1, 1));
         Bukkit.broadcast(Component.text("§a" + playerEntryMap.get(type).getName() + "の勝利！"));
         isStarted = false;
+    }
+
+    public void skip() {
+        Bukkit.broadcast(Component.text("対戦プレイヤーがどちらもオフラインのためスキップされました"));
     }
 
     private void initPlayer(Player player) {
@@ -144,10 +151,19 @@ public class Battle {
     }
 
     private void resetPlayer(Player player) {
+        if (player == null) {
+            return;
+        }
         player.getInventory().clear();
         player.setHealth(20.0);
         player.setFoodLevel(20);
         player.setSaturation(1.0f);
+    }
+
+    @Nullable
+    private Player getPlayer(TournamentEntry entry) {
+        if (entry == null) return null;
+        return Bukkit.getPlayer(entry.getUuid());
     }
 
     private WinnerType opposingSideOf(WinnerType type) {
